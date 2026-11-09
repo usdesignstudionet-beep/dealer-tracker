@@ -95,11 +95,11 @@ function R(l,v,c,t){return '<tr'+(t?' class="tot"':'')+'><td class="l">'+l+'</td
 function vn(v){return esc([v.year,v.make,v.model].join(" "))}
 function render(){$("#app").innerHTML={w:overview,v:vehicles,o:soldTab,d:daily,e:expenses,s:summary}[tab]();
 document.querySelectorAll("nav button").forEach(function(b){b.classList.toggle("on",b.dataset.t===tab)})}
-function bk(){return '<button class="btn g" onclick="exp(1)">Share / Export backup</button><button class="btn g" onclick="$(\'#imp\').click()">Import backup</button>'}
+function bk(){return '<button class="btn" onclick="exp(1)">Send / Download PDF</button><button class="btn g" onclick="$(\'#imp\').click()">Import backup</button>'}
 
 function overview(){var p={d:today(),m:today().slice(0,7),y:today().slice(0,4),a:""}[PR],r=calc(p),lb=null;
 try{lb=localStorage.getItem("rbbk")}catch(e){}
-var h='';if(D.vehicles.length&&(!lb||(new Date()-new Date(lb))>6048e5))h+='<div class="warn">⚠ No backup in the last 7 days. Tap “Share / Export backup” and save the file somewhere safe.</div>';
+var h='';if(D.vehicles.length&&(!lb||(new Date()-new Date(lb))>6048e5))h+='<div class="warn">⚠ No backup in the last 7 days. Tap “Send / Download PDF”, then “Download data backup”, and save the file somewhere safe.</div>';
 h+='<div class="bar">';[["d","Today"],["m","This month"],["y","This year"],["a","All time"]].forEach(function(x){h+='<button class="btn g'+(PR===x[0]?" on":"")+'" onclick="PR=\''+x[0]+'\';render()">'+x[1]+'</button>'});h+=bk()+'</div>';
 h+='<h3 class="sec" style="margin-top:4px">Profit &amp; Loss</h3><div class="kpis">'+K(r.s.length,"Cars sold")+K(fmt(r.rev),"Sales (money in)")+K(fmt(r.gross),"Gross profit on cars",cl(r.gross))+K(fmt(r.ex),"Office, marketing &amp; salary")+K(fmt(r.net),"NET PROFIT / LOSS",cl(r.net))+K(r.s.length?fmt(r.gross/r.s.length):"–","Avg profit per car")+K(r.loss,"Cars sold at a loss")+K(r.s.length?Math.round(r.dy/r.s.length):"–","Avg days to sell")+'</div>';
 h+='<div class="card w" style="margin-top:12px"><table class="sm"><tr><th class="l">Detailed statement</th><th>Amount</th></tr>'+R("Sales of vehicles",r.rev,"",1)+R("− Vehicle purchase price",-r.pr)+R("− Taxes &amp; DMV fees",-r.tx)+R("− Reconditioning",-r.rc)+R("− Floorplan fees",-r.fl)+R("Gross profit",r.gross,cl(r.gross),1);
@@ -144,7 +144,7 @@ if(editId){var i=D.vehicles.findIndex(function(x){return x.id===editId});o.id=ed
 $("#dlg").close();save()}
 function delV(){if(confirm("Delete this vehicle?")){D.vehicles=D.vehicles.filter(function(x){return x.id!==editId});$("#dlg").close();save()}}
 
-function daily(){var r=calc(DD),h='<div class="bar"><button class="btn g" onclick="shiftD(-1)">◀</button><input type="date" value="'+DD+'" onchange="DD=this.value||today();render()" style="width:auto"><button class="btn g" onclick="shiftD(1)">▶</button><button class="btn g" onclick="DD=today();render()">Today</button></div>';
+function daily(){var r=calc(DD),h='<div class="bar"><button class="btn g" onclick="shiftD(-1)">◀</button><input type="date" value="'+DD+'" onchange="DD=this.value||today();render()" style="width:auto"><button class="btn g" onclick="shiftD(1)">▶</button><button class="btn g" onclick="DD=today();render()">Today</button>'+bk()+'</div>';
 h+='<div class="kpis">'+K(r.b.length,"Cars bought")+K(fmt(r.bc),"Spent on purchases")+K(r.s.length,"Cars sold")+K(fmt(r.rev),"Sales")+K(fmt(r.gross),"Profit on cars sold",cl(r.gross))+K(fmt(r.ex),"Expenses")+K(fmt(r.net),"Day net",cl(r.net))+'</div>';
 h+='<div class="bar" style="margin-top:18px"><h3 class="sec" style="margin:0;flex:1">Bought</h3><button class="btn s" onclick="openF(null,0,DD)">+ Add bought car</button></div><div class="card w"><table class="sm"><tr><th class="l">Stock #</th><th class="l">Vehicle</th><th class="l">Source</th><th>Paid by</th><th>Cost</th></tr>';
 if(!r.b.length)h+='<tr><td colspan="5" class="l">None</td></tr>';
@@ -162,7 +162,7 @@ var EDT=today();
 function expenses(){
 if((EDT||"").slice(0,7)!==ek)EDT=ek===today().slice(0,7)?today():ek+"-01";
 var t=exOf(ek),lg=D.expenses[ek]||{},
-h='<div class="card"><h3 class="sec" style="margin-top:0">Add new expenses</h3><div style="max-width:220px;margin-bottom:10px"><label>Date</label><input type="date" id="edt" value="'+EDT+'" onchange="EDT=this.value||today()"></div>';
+h='<div class="bar"><button class="btn" onclick="exp(1,\'exp\')">Send Expenses PDF (WhatsApp / Email)</button><button class="btn g" onclick="exp(0,\'exp\')">Download Expenses PDF</button><button class="btn g" onclick="exp(1)">Full report PDF</button></div><div class="card"><h3 class="sec" style="margin-top:0">Add new expenses</h3><div style="max-width:220px;margin-bottom:10px"><label>Date</label><input type="date" id="edt" value="'+EDT+'" onchange="EDT=this.value||today()"></div>';
 CATS.forEach(function(c){h+='<div class="ex"><span>'+c+'</span><input type="number" step="any" inputmode="decimal" placeholder="0" data-c="'+c+'"></div>'});
 h+='<div class="bar" style="margin-top:10px"><button class="btn" id="sb" onclick="saveM()">Save expenses</button><span id="sm" class="pos"></span></div><p class="note">Sirf naye amounts likho aur Save dabao. Har save is date pe add hota hai, form khali ho jata hai (next entry ke liye), aur Overview, Daily, Monthly sab auto update hote hain.</p></div>';
 h+='<div class="card"><div class="bar"><label style="margin:0">Month</label><input type="month" value="'+ek+'" onchange="ek=this.value||ek;render()" style="width:auto"></div><div class="kpis">'+K(fmt(t),"Total expenses · "+ek)+'</div><div class="w" style="margin-top:10px"><table class="sm"><tr><th class="l">Category</th><th>Total</th></tr>';
@@ -198,10 +198,167 @@ h+='<tr><td class="l">'+MON[m]+'</td><td>'+r[0]+'</td><td>'+fmt(r[1])+'</td><td>
 h+='<tr class="tot"><td class="l">Year total</td><td>'+T[0]+'</td><td>'+fmt(T[1])+'</td><td>'+fmt(T[2])+'</td><td>'+fmt(T[3])+'</td><td>'+fmt(T[4])+'</td><td class="'+cl(T[5])+'">'+fmt(T[5])+'</td><td>'+T[6]+'</td></tr></table></div>';
 return h+'<p class="note">Expenses include salary, rent, electricity, Carfax, CarGurus, CRM, marketing and other. Net profit = gross profit − expenses.</p>'}
 
-function exp(share){try{localStorage.setItem("rbbk",today())}catch(e){}
-var blob=new Blob([JSON.stringify(D,null,1)],{type:"application/json"}),name="RajBros_backup_"+today()+".json";
-if(share&&navigator.canShare){var f=new File([blob],name,{type:"application/json"});if(navigator.canShare({files:[f]})){navigator.share({files:[f]}).catch(function(){});return}}
-var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click()}
+var HWr=[278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
+var HWb=[278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584];
+function buildPDF(scope){
+var PW=595.28,PH=841.89,MG=36,CW=PW-2*MG,pg=[],ops,y=0;
+var C={ink:"#14213d",mu:"#667085",ac:"#1f3864",ln:"#d5d9e0",pos:"#1b7f3b",neg:"#c0392b",old:"#b45309",zb:"#f3f5f9",tot:"#e6ebf5",wh:"#ffffff"};
+var gen=new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
+function rgb(h){return [1,3,5].map(function(i){return (parseInt(h.substr(i,2),16)/255).toFixed(3)}).join(" ")}
+function enc(s){s=String(s==null?"":s);var m={8211:150,8212:151,8216:145,8217:146,8220:147,8221:148,8226:149,8722:45,8230:133},o="";
+for(var i=0;i<s.length;i++){var c=s.charCodeAt(i);if(m[c]!=null)c=m[c];else if(c<32)c=32;else if(c>255||(c>126&&c<160))c=63;o+=String.fromCharCode(c)}return o}
+function tw(s,sz,b){var t=b?HWb:HWr,w=0;for(var i=0;i<s.length;i++){var c=s.charCodeAt(i);w+=(c>=32&&c<=126)?t[c-32]:(c===151?1000:c===149?350:556)}return w*sz/1000}
+function fit(s,w,sz,b){s=String(s==null?"":s);if(tw(enc(s),sz,b)<=w)return s;while(s.length&&tw(enc(s+"..."),sz,b)>w)s=s.slice(0,-1);return s+"..."}
+function txt(x,yy,s,sz,b,col,al){s=enc(s);var w=tw(s,sz,b);if(al==="r")x-=w;else if(al==="c")x-=w/2;
+ops.push("BT /"+(b?"F2":"F1")+" "+sz+" Tf "+rgb(col)+" rg "+x.toFixed(2)+" "+(PH-yy).toFixed(2)+" Td ("+s.replace(/([\\()])/g,"\\$1")+") Tj ET")}
+function rect(x,yy,w,h,f,st){ops.push("q "+(f?rgb(f)+" rg ":"")+(st?rgb(st)+" RG 0.6 w ":"")+x.toFixed(2)+" "+(PH-yy-h).toFixed(2)+" "+w.toFixed(2)+" "+h.toFixed(2)+" re "+(f&&st?"B":f?"f":"S")+" Q")}
+function ln(x1,y1,x2,col,w){ops.push("q "+rgb(col)+" RG "+(w||0.6)+" w "+x1.toFixed(2)+" "+(PH-y1).toFixed(2)+" m "+x2.toFixed(2)+" "+(PH-y1).toFixed(2)+" l S Q")}
+function np(){ops=[];pg.push(ops);if(pg.length>1){rect(0,0,PW,6,C.ac);txt(MG,26,"RajBros Auto Group - Dealer Tracker report",8,0,C.mu);txt(PW-MG,26,"Generated "+gen,8,0,C.mu,"r");ln(MG,32,PW-MG,C.ln);y=50}}
+function need(h){if(y+h>PH-46)np()}
+function sec(t,sub){need(80);y+=10;txt(MG,y+12,t,12,1,C.ac);ln(MG,y+18,PW-MG,C.ac,1);y+=26;if(sub){txt(MG,y+8,sub,7.5,0,C.mu);y+=14}}
+function kpis(items){var cw=(CW-24)/4,ch=46;for(var i=0;i<items.length;i+=4){need(ch+8);
+items.slice(i,i+4).forEach(function(k,j){var x=MG+j*(cw+8),sz=15;rect(x,y,cw,ch,"#f7f8fb",C.ln);while(sz>8&&tw(enc(k[0]),sz,1)>cw-14)sz-=0.5;
+txt(x+8,y+22,k[0],sz,1,k[2]||C.ink);txt(x+8,y+37,fit(k[1],cw-14,7.5,0),7.5,0,C.mu)});y+=ch+8}}
+function tbl(cols,rows,o){o=o||{};var sz=o.size||8,rh=o.rh||16;
+function hd(){rect(MG,y,CW,rh+2,C.ac);var x=MG;cols.forEach(function(c){txt(c.a==="r"?x+c.w-4:x+4,y+rh/2+sz*0.35+1,fit(c.h,c.w-8,sz,1),sz,1,C.wh,c.a==="r"?"r":"l");x+=c.w});y+=rh+2}
+need(rh*3+2);hd();
+if(!rows.length){var e=["None"];rows=[e]}
+rows.forEach(function(r,i){if(y+rh>PH-46){np();hd()}
+if(r.tot)rect(MG,y,CW,rh,C.tot);else if(i%2)rect(MG,y,CW,rh,C.zb);
+var x=MG;cols.forEach(function(c,j){var v=r[j],b=!!r.tot,col=C.ink;
+if(v&&typeof v==="object"&&v.bar!=null){rect(x+4,y+4,Math.max(0,c.w-8)*Math.min(100,v.bar)/100,rh-8,"#7fa6e8")}
+else{if(v&&typeof v==="object"){col=C[v.c]||C.ink;b=b||!!v.b;v=v.t}v=fit(v==null?"":v,c.w-8,sz,b);txt(c.a==="r"?x+c.w-4:x+4,y+rh/2+sz*0.35,v,sz,b,col,c.a==="r"?"r":"l")}
+x+=c.w});
+if(r.tot)ln(MG,y,MG+CW,C.ac,0.6);y+=rh});
+ln(MG,y,MG+CW,C.ln);y+=6}
+function sg(v){return {t:fmt(v),c:cl(v)}}
+function vname(v){return [v.year,v.make,v.model].filter(Boolean).join(" ")}
+var tdy=today(),curM=tdy.slice(0,7),curY=tdy.slice(0,4),PK=[curM,curY,""],ps=PK.map(calc),A=ps[2];
+np();
+if(scope==="exp")expBody();else allBody();
+function allBody(){
+rect(0,0,PW,92,C.ac);txt(MG,36,"RajBros Auto Group",21,1,C.wh);txt(MG,54,"Dealer Tracker - Business Report",11,0,"#cfd9ee");
+txt(MG,70,"1st Choice Auto Group - Cerritos / Long Beach, CA",8.5,0,"#cfd9ee");txt(MG,83,"Generated "+gen,8.5,0,"#cfd9ee");
+txt(PW-MG,34,"ALL-TIME NET PROFIT / LOSS",7.5,1,"#cfd9ee","r");txt(PW-MG,62,fmt(A.net),22,1,A.net<0?"#ffb3a8":"#8ff0b0","r");
+y=100;
+sec("Overview - all time");
+kpis([[String(A.s.length),"Cars sold"],[fmt(A.rev),"Sales (money in)"],[fmt(A.gross),"Gross profit on cars",A.gross<0?C.neg:C.pos],[fmt(A.ex),"Office, marketing & salary"],
+[fmt(A.net),"NET PROFIT / LOSS",A.net<0?C.neg:C.pos],[A.s.length?fmt(A.gross/A.s.length):"-","Avg profit per car"],[String(A.loss),"Cars sold at a loss"],[A.s.length?String(Math.round(A.dy/A.s.length)):"-","Avg days to sell"]]);
+var mn=MON[+curM.slice(5)-1]+" "+curY;
+sec("Profit & Loss statement","This month = "+mn+"   |   This year = "+curY+"   |   All time = everything recorded");
+function r3(l,f,cls,tot){var r=[l].concat(ps.map(function(p){var v=f(p);return cls?sg(v):fmt(v)}));if(tot)r.tot=1;return r}
+function rc(l,f){return [l].concat(ps.map(function(p){return String(f(p))}))}
+var pl=[rc("Cars bought",function(p){return p.b.length}),rc("Cars sold",function(p){return p.s.length}),r3("Sales of vehicles",function(p){return p.rev},0,1),
+r3("- Vehicle purchase price",function(p){return -p.pr}),r3("- Taxes & DMV fees",function(p){return -p.tx}),r3("- Reconditioning",function(p){return -p.rc}),r3("- Floorplan fees",function(p){return -p.fl}),
+r3("Gross profit",function(p){return p.gross},1,1)];
+CATS.forEach(function(c){var vs=PK.map(function(k){return exOf(k,c)});if(vs.some(Boolean))pl.push(["- "+c].concat(vs.map(function(v){return fmt(-v)})))});
+pl.push(r3("Total expenses",function(p){return -p.ex},0,1));pl.push(r3("NET PROFIT / LOSS",function(p){return p.net},1,1));
+tbl([{h:"Item",w:223.28},{h:"This month",w:100,a:"r"},{h:"This year",w:100,a:"r"},{h:"All time",w:100,a:"r"}],pl);
+sec("Expenses breakdown");
+var eb=CATS.map(function(c){var v=PK.map(function(k){return exOf(k,c)}),q=A.ex?v[2]/A.ex*100:0;return [c,fmt(v[0]),fmt(v[1]),fmt(v[2]),q.toFixed(0)+"%",{bar:q}]});
+var et=["Total",fmt(ps[0].ex),fmt(ps[1].ex),fmt(A.ex),"",""];et.tot=1;eb.push(et);
+tbl([{h:"Category",w:150},{h:"This month",w:80,a:"r"},{h:"This year",w:80,a:"r"},{h:"All time",w:80,a:"r"},{h:"% of all",w:45,a:"r"},{h:"",w:88.28}],eb);
+var st=D.vehicles.filter(function(v){return !sold(v)}),fl=st.filter(function(v){return v.paid==="Floored"}),tc=st.reduce(function(s,v){return s+cost(v)},0),fc=fl.reduce(function(s,v){return s+cost(v)},0);
+sec("Money in stock (right now)");
+kpis([[String(st.length),"Cars in stock"],[fmt(tc),"Money tied up in stock"],[fmt(tc-fc)+" ("+(st.length-fl.length)+" cars)","Paid cash"],[fmt(fc)+" ("+fl.length+" cars)","Floored"],
+[String(st.filter(function(v){return days(v)>45}).length),"In stock over 45 days",C.old]]);
+sec("Monthly summary - "+yr);
+var T=[0,0,0,0,0,0,0],mr=[];
+for(var m=0;m<12;m++){var k=yr+"-"+("0"+(m+1)).slice(-2),c=calc(k),r=[c.s.length,c.rev,c.vc,c.gross,c.ex,c.net,c.b.length];r.forEach(function(x,i){T[i]+=x});
+mr.push([MON[m],String(r[0]),fmt(r[1]),fmt(r[2]),fmt(r[3]),fmt(r[4]),sg(r[5]),String(r[6])])}
+var mt=["Year total",String(T[0]),fmt(T[1]),fmt(T[2]),fmt(T[3]),fmt(T[4]),sg(T[5]),String(T[6])];mt.tot=1;mr.push(mt);
+tbl([{h:"Month",w:55},{h:"Cars sold",w:48,a:"r"},{h:"Revenue",w:72,a:"r"},{h:"Vehicle cost",w:72,a:"r"},{h:"Gross profit",w:72,a:"r"},{h:"Expenses",w:68,a:"r"},{h:"Net profit",w:72,a:"r"},{h:"Cars bought",w:64.28,a:"r"}],mr);
+sec("Expenses by month - "+yr);
+var SL=["Salary","Carfax","CarGurus","Rent","Electric","CRM","Meta Ads","Social","Other"],xr=[],xt=[0,0,0,0,0,0,0,0,0,0];
+for(var m2=0;m2<12;m2++){var k2=yr+"-"+("0"+(m2+1)).slice(-2),row=[MON[m2]];CATS.forEach(function(c,i){var v=exOf(k2,c);xt[i]+=v;row.push(v?fmt(v):"-")});var tv=exOf(k2);xt[9]+=tv;row.push(tv?fmt(tv):"-");xr.push(row)}
+var xtt=["Total"].concat(xt.map(function(v){return fmt(v)}));xtt.tot=1;xr.push(xtt);
+var cw9=(CW-40-64.28)/9,xc=[{h:"Month",w:40}];SL.forEach(function(s){xc.push({h:s,w:cw9,a:"r"})});xc.push({h:"Total",w:64.28,a:"r"});
+tbl(xc,xr,{size:7});
+sec("Vehicles in stock ("+st.length+")");
+var sr=st.slice().sort(function(a,b){return(b.pdate||"")>(a.pdate||"")?1:-1}).map(function(v){var d=days(v);return [v.stock||"",vname(v),v.miles?n(v.miles).toLocaleString("en-US"):"",v.pdate||"",v.source||"",v.paid||"",fmt(cost(v)),{t:String(d),c:d>45?"old":""}]});
+if(st.length){var stt=["Total ("+st.length+")","","","","","",fmt(tc),""];stt.tot=1;sr.push(stt)}
+tbl([{h:"Stock #",w:46},{h:"Vehicle",w:135},{h:"Miles",w:52,a:"r"},{h:"Bought",w:56},{h:"Source",w:92},{h:"Paid by",w:44},{h:"Total cost",w:62,a:"r"},{h:"Days",w:36.28,a:"r"}],sr);
+var so=D.vehicles.filter(sold).sort(function(a,b){return b.sdate>a.sdate?1:-1}),srv=0,spr=0;
+so.forEach(function(v){srv+=n(v.sprice);spr+=profit(v)});
+sec("Sold vehicles ("+so.length+")");
+var sl=so.map(function(v){return [v.stock||"",vname(v),v.sdate||"",v.cust||"",fmt(cost(v)),fmt(n(v.sprice)),sg(profit(v)),pct(v),String(days(v))]});
+if(so.length){var slt=["","Total ("+so.length+")","","","",fmt(srv),sg(spr),"",""];slt.tot=1;sl.push(slt)}
+tbl([{h:"Stock #",w:36},{h:"Vehicle",w:135},{h:"Sold date",w:52},{h:"Customer",w:70},{h:"Total cost",w:52,a:"r"},{h:"Sold price",w:52,a:"r"},{h:"Profit / Loss",w:56,a:"r"},{h:"Margin",w:36,a:"r"},{h:"Days",w:33.28,a:"r"}],sl);
+sec("All expense entries");
+var L=D.exp.slice().sort(function(a,b){return(a.date||"")<(b.date||"")?1:(a.date||"")>(b.date||"")?-1:0}).map(function(x){return [x.date||"",x.cat||"",x.note||"",fmt(n(x.amt))]});
+Object.keys(D.expenses).sort().reverse().forEach(function(k){CATS.forEach(function(c){var a=n((D.expenses[k]||{})[c]);if(a)L.push(["Older "+k,c,"monthly total (older entry)",fmt(a)])})});
+if(L.length){var lt=["Total","","",fmt(A.ex)];lt.tot=1;L.push(lt)}
+tbl([{h:"Date",w:80},{h:"Category",w:140},{h:"Note",w:223},{h:"Amount",w:80.28,a:"r"}],L);
+}
+function expBody(){
+var em=ek,eY=em.slice(0,4),mnm=MON[+em.slice(5)-1]+" "+eY,tM=exOf(em),tY=exOf(eY),tA=exOf(""),lg=D.expenses[em]||{};
+var ents=D.exp.filter(function(x){return(x.date||"").indexOf(em)===0}).sort(function(a,b){return a.date>b.date?1:a.date<b.date?-1:0});
+var legN=CATS.filter(function(c){return n(lg[c])}).length,dim=new Date(+eY,+em.slice(5),0).getDate();
+var cv=CATS.map(function(c){return [c,exOf(em,c)]}).sort(function(a,b){return b[1]-a[1]}),top=cv[0]&&cv[0][1]>0?cv[0]:null;
+rect(0,0,PW,92,C.ac);txt(MG,36,"RajBros Auto Group",21,1,C.wh);txt(MG,54,"Expenses Report - "+mnm,11,0,"#cfd9ee");
+txt(MG,70,"1st Choice Auto Group - Cerritos / Long Beach, CA",8.5,0,"#cfd9ee");txt(MG,83,"Generated "+gen,8.5,0,"#cfd9ee");
+txt(PW-MG,34,"TOTAL EXPENSES - "+mnm.toUpperCase(),7.5,1,"#cfd9ee","r");txt(PW-MG,62,fmt(tM),22,1,C.wh,"r");
+y=100;
+sec("Overview - "+mnm);
+kpis([[fmt(tM),"Total expenses - "+mnm],[fmt(tY),"Year to date - "+eY],[fmt(tA),"All time"],[String(ents.length+legN),"Entries this month"],
+[fmt(tM/dim),"Average per day"],[top?top[0]:"-","Biggest category"+(top?" ("+fmt(top[1])+")":"")],[tY?(tM/tY*100).toFixed(0)+"%":"-","Share of year so far"],[fmt(tY/(em===today().slice(0,7)?+em.slice(5):12)),"Average per month - "+eY]]);
+sec("Expenses by category","Month = "+mnm+"   |   Year = "+eY+"   |   All time = everything recorded");
+var cr=CATS.map(function(c){var a=exOf(em,c),b=exOf(eY,c),d=exOf("",c),q=tM?a/tM*100:0;return [c,fmt(a),fmt(b),fmt(d),q.toFixed(0)+"%",{bar:q}]});
+var ct=["Total",fmt(tM),fmt(tY),fmt(tA),"",""];ct.tot=1;cr.push(ct);
+tbl([{h:"Category",w:150},{h:mnm,w:80,a:"r"},{h:"Year "+eY,w:80,a:"r"},{h:"All time",w:80,a:"r"},{h:"Share",w:45,a:"r"},{h:"",w:88.28}],cr);
+sec("Expenses by month - "+eY);
+var SL=["Salary","Carfax","CarGurus","Rent","Electric","CRM","Meta Ads","Social","Other"],xr=[],xt=[0,0,0,0,0,0,0,0,0,0];
+for(var m2=0;m2<12;m2++){var k2=eY+"-"+("0"+(m2+1)).slice(-2),row=[MON[m2]];CATS.forEach(function(c,i){var v=exOf(k2,c);xt[i]+=v;row.push(v?fmt(v):"-")});var tv=exOf(k2);xt[9]+=tv;row.push(tv?fmt(tv):"-");xr.push(row)}
+var xtt=["Total"].concat(xt.map(function(v){return fmt(v)}));xtt.tot=1;xr.push(xtt);
+var cw9=(CW-40-64.28)/9,xc=[{h:"Month",w:40}];SL.forEach(function(s){xc.push({h:s,w:cw9,a:"r"})});xc.push({h:"Total",w:64.28,a:"r"});
+tbl(xc,xr,{size:7});
+sec("Expense entries - "+mnm+" ("+(ents.length+legN)+")");
+var er=ents.map(function(x){return [x.date||"",x.cat||"",x.note||"",fmt(n(x.amt))]});
+CATS.forEach(function(c){var a=n(lg[c]);if(a)er.push(["Monthly total",c,"older entry",fmt(a)])});
+if(er.length){var et2=["Total","","",fmt(tM)];et2.tot=1;er.push(et2)}
+tbl([{h:"Date",w:80},{h:"Category",w:140},{h:"Note",w:223},{h:"Amount",w:80.28,a:"r"}],er);
+sec("All expense entries - all time");
+var L2=D.exp.slice().sort(function(a,b){return(a.date||"")<(b.date||"")?1:(a.date||"")>(b.date||"")?-1:0}).map(function(x){return [x.date||"",x.cat||"",x.note||"",fmt(n(x.amt))]});
+Object.keys(D.expenses).sort().reverse().forEach(function(k){CATS.forEach(function(c){var a=n((D.expenses[k]||{})[c]);if(a)L2.push(["Older "+k,c,"monthly total (older entry)",fmt(a)])})});
+if(L2.length){var lt2=["Total","","",fmt(tA)];lt2.tot=1;L2.push(lt2)}
+tbl([{h:"Date",w:80},{h:"Category",w:140},{h:"Note",w:223},{h:"Amount",w:80.28,a:"r"}],L2);
+}
+var N=pg.length;pg.forEach(function(o,i){ops=o;ln(MG,PH-34,PW-MG,C.ln);txt(MG,PH-22,"RajBros Auto Group - Dealer Tracker",7.5,0,C.mu);txt(PW-MG,PH-22,"Page "+(i+1)+" of "+N,7.5,0,C.mu,"r")});
+var objs=[],kids=[],i;for(i=0;i<N;i++)kids.push((5+2*i)+" 0 R");
+objs[1]="<</Type/Catalog/Pages 2 0 R>>";objs[2]="<</Type/Pages/Count "+N+"/Kids["+kids.join(" ")+"]>>";
+objs[3]="<</Type/Font/Subtype/Type1/BaseFont/Helvetica/Encoding/WinAnsiEncoding>>";objs[4]="<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold/Encoding/WinAnsiEncoding>>";
+pg.forEach(function(o,i){var s=o.join("\n");objs[5+2*i]="<</Type/Page/Parent 2 0 R/MediaBox[0 0 "+PW.toFixed(2)+" "+PH.toFixed(2)+"]/Resources<</Font<</F1 3 0 R/F2 4 0 R>>>>/Contents "+(6+2*i)+" 0 R>>";objs[6+2*i]="<</Length "+s.length+">>\nstream\n"+s+"\nendstream"});
+objs[5+2*N]="<</Title (RajBros Business Report)/Producer (RajBros Dealer Tracker)>>";
+var out="%PDF-1.4\n",off=[];for(i=1;i<objs.length;i++){off[i]=out.length;out+=i+" 0 obj\n"+objs[i]+"\nendobj\n"}
+var xp=out.length;out+="xref\n0 "+objs.length+"\n0000000000 65535 f \n";for(i=1;i<objs.length;i++)out+=("0000000000"+off[i]).slice(-10)+" 00000 n \n";
+out+="trailer\n<</Size "+objs.length+"/Root 1 0 R/Info "+(5+2*N)+" 0 R>>\nstartxref\n"+xp+"\n%%EOF";
+var u=new Uint8Array(out.length);for(i=0;i<out.length;i++)u[i]=out.charCodeAt(i)&255;return u}
+
+function exp(share,scope){scope=scope==="exp"?"exp":"all";try{localStorage.setItem("rbbk",today())}catch(e){}
+var old=document.getElementById("shm");if(old)old.remove();
+var stamp=today(),pname=(scope==="exp"?"RajBros_Expenses_"+ek:"RajBros_Report_"+stamp)+".pdf",jname="RajBros_backup_"+stamp+".json",pdf=null,pfile=null,perr="";
+try{pdf=buildPDF(scope)}catch(e){perr="Could not build the PDF report ("+(e&&e.message||e)+")."}
+var pblob=pdf?new Blob([pdf],{type:"application/pdf"}):null;
+try{if(pblob)pfile=new File([pblob],pname,{type:"application/pdf"})}catch(e){}
+var o=document.createElement("div");o.id="shm";o.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99;display:flex;align-items:flex-end;justify-content:center;padding:12px";
+var desc=scope==="exp"?"Expenses report for "+MON[+ek.slice(5)-1]+" "+ek.slice(0,4)+" - overview, categories, month-by-month and every entry":"Full business report - overview, profit &amp; loss, expenses, monthly summary, stock and sold cars";
+o.innerHTML='<div style="background:var(--card);color:var(--tx);border-radius:14px;padding:16px;width:100%;max-width:420px;max-height:92vh;overflow:auto;display:grid;gap:8px"><b style="font-size:16px">Send / Download PDF report</b><div style="display:flex;gap:6px"><button class="btn g'+(scope==="all"?" on":"")+'" id="sc1" style="flex:1">Full report</button><button class="btn g'+(scope==="exp"?" on":"")+'" id="sc2" style="flex:1">Expenses only</button></div><span style="font-size:12px;color:var(--mu)">'+pname+' — '+desc+'</span><button class="btn" id="sw">Send via WhatsApp</button><button class="btn" id="se">Send via Email</button><button class="btn g" id="sa">Share PDF to other apps…</button><button class="btn g" id="sd">Download PDF</button><button class="btn g" id="sj">Download data backup (.json, for Import)</button><div id="shn" style="font-size:12px;color:var(--mu)"></div><button class="btn g" id="sx">Close</button></div>';
+document.body.appendChild(o);
+function note(t){$("#shn").textContent=t}
+function dlf(b,name){try{var u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download=name;a.style.display="none";document.body.appendChild(a);a.click();setTimeout(function(){a.remove();URL.revokeObjectURL(u)},2000);return 1}catch(e){return 0}}
+function cs(){try{return !!(pfile&&navigator.share&&navigator.canShare&&navigator.canShare({files:[pfile]}))}catch(e){return 0}}
+function openL(h){var a=document.createElement("a");a.href=h;a.target="_blank";a.rel="noopener";a.style.display="none";document.body.appendChild(a);a.click();a.remove()}
+var msg;try{if(scope==="exp"){var emk=ek,emt=exOf(emk),eyt=exOf(emk.slice(0,4));msg="RajBros Auto Group - Expenses report, "+MON[+emk.slice(5)-1]+" "+emk.slice(0,4)+"\nMonth total: "+fmt(emt)+" | Year to date: "+fmt(eyt)+"\nFull PDF report attached."}else{var ac=calc("");msg="RajBros Auto Group - Business report ("+stamp+")\nCars sold: "+ac.s.length+" | Sales: "+fmt(ac.rev)+" | Expenses: "+fmt(ac.ex)+" | Net: "+fmt(ac.net)+"\nFull PDF report attached."}}catch(e){msg="RajBros Auto Group - report ("+stamp+"). PDF attached."}
+function send(kind){if(!pdf){note(perr);return}
+var wa=kind==="wa",link=wa?"https://wa.me/?text="+encodeURIComponent(msg):"mailto:?subject="+encodeURIComponent("RajBros Auto Group - "+(scope==="exp"?"Expenses Report "+ek:"Business Report "+stamp))+"&body="+encodeURIComponent(msg);
+var fb=function(){var ok=dlf(pblob,pname);openL(link);note((ok?"PDF saved to your device. ":"")+"Attach "+pname+" in the "+(wa?"WhatsApp":"email")+" window that opened.")};
+if(cs()){note("Choose "+(wa?"WhatsApp":"your email app")+" in the share menu - the PDF is attached.");navigator.share({files:[pfile],title:(scope==="exp"?"RajBros Expenses Report":"RajBros Business Report"),text:msg}).catch(function(e){if(!e||e.name!=="AbortError")fb()})}else fb()}
+$("#sx").onclick=function(){o.remove()};$("#sc1").onclick=function(){exp(1,"all")};$("#sc2").onclick=function(){exp(1,"exp")};o.onclick=function(e){if(e.target===o)o.remove()};
+$("#sw").onclick=function(){send("wa")};$("#se").onclick=function(){send("em")};
+$("#sa").onclick=function(){if(!pdf){note(perr);return}if(cs())navigator.share({files:[pfile],title:"RajBros Business Report",text:msg}).catch(function(){});else{dlf(pblob,pname);note("This browser can't share files directly, so the PDF was downloaded instead.")}};
+$("#sd").onclick=function(){if(!pdf){note(perr);return}note(dlf(pblob,pname)?"PDF download started.":"Download is blocked here - try Share PDF to other apps.")};
+$("#sj").onclick=function(){dlf(new Blob([JSON.stringify(D,null,1)],{type:"application/json"}),jname);note("Data backup downloaded. Use it with Import backup if you ever need to restore.")};
+if(!share)$("#sd").onclick()}
 $("#imp").onchange=function(){var f=this.files[0];this.value="";if(!f)return;var r=new FileReader();r.onload=function(){try{var d=JSON.parse(r.result);if(!Array.isArray(d.vehicles))throw 0;d=mig(d);
 if(confirm("MERGE this backup into current data?\n\nOK = merge (keeps both devices' data; same record = backup version wins)\nCancel = more options")){
 d.vehicles.forEach(function(v){var i=D.vehicles.findIndex(function(x){return x.id===v.id});if(i<0)D.vehicles.push(v);else D.vehicles[i]=v});
