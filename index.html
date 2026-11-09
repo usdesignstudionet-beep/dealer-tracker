@@ -36,6 +36,8 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}label{font-size:12px;color:var(--mu);display:block}
 .ex{display:grid;grid-template-columns:1fr 130px;gap:8px;align-items:center;margin-bottom:6px}
 .note{color:var(--mu);font-size:12px;margin:6px 0}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}@keyframes sp{to{transform:rotate(360deg)}}
+.btn:disabled{opacity:.7;cursor:wait}
 #pl{margin:10px 0;padding:10px;border:2px solid var(--ln);border-radius:8px;font-size:15px}
 @media(max-width:600px){.ex{grid-template-columns:1fr 110px}.g2{grid-template-columns:1fr}input,select{font-size:16px}.btn{padding:11px 14px}main{padding:8px}.kpi b{font-size:16px}}
 </style></head><body>
@@ -156,14 +158,30 @@ ex.forEach(function(x){h+='<tr class="c" onclick="openE(\''+x.id+'\')"><td class
 return h+'</table></div><button class="btn" onclick="openE(null,DD)">+ Add expense for this day</button>'}
 function shiftD(k){var d=new Date(DD+"T12:00:00");d.setDate(d.getDate()+k);DD=d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);render()}
 
-function expenses(){var e=D.expenses[ek]||{},t=0;CATS.forEach(function(c){t+=n(e[c])});var x=exOf(ek)-t;
-var h='<div class="card"><div class="bar"><label style="margin:0">Month</label><input type="month" value="'+ek+'" onchange="ek=this.value||ek;render()" style="width:auto"></div>';
-CATS.forEach(function(c){h+='<div class="ex"><span>'+c+'</span><input type="number" step="any" placeholder="0" data-c="'+c+'" value="'+(e[c]||"")+'" onchange="setE(\''+c+'\',this.value)"></div>'});
-h+='<p><b>Total for '+ek+': '+fmt(t)+'</b></p><div class="bar"><button class="btn" onclick="saveM()">Save</button><span id="sm" class="pos"></span></div><p class="note">Tap Save after entering the details. You can come back and add or change amounts anytime, then Save again.</p>';
-if(x)h+='<p class="note">+ '+fmt(x)+' of expenses added on the Daily tab (included in Overview and Monthly).</p>';
-return h+'</div>'}
-function saveM(){D.expenses[ek]=D.expenses[ek]||{};document.querySelectorAll("input[data-c]").forEach(function(i){D.expenses[ek][i.dataset.c]=i.value});save();var m=$("#sm");if(m){m.textContent="✓ Saved";setTimeout(function(){var q=$("#sm");if(q)q.textContent=""},2500)}}
-function setE(c,v){D.expenses[ek]=D.expenses[ek]||{};D.expenses[ek][c]=v;save()}
+var EDT=today();
+function expenses(){
+if((EDT||"").slice(0,7)!==ek)EDT=ek===today().slice(0,7)?today():ek+"-01";
+var t=exOf(ek),lg=D.expenses[ek]||{},
+h='<div class="card"><h3 class="sec" style="margin-top:0">Add new expenses</h3><div style="max-width:220px;margin-bottom:10px"><label>Date</label><input type="date" id="edt" value="'+EDT+'" onchange="EDT=this.value||today()"></div>';
+CATS.forEach(function(c){h+='<div class="ex"><span>'+c+'</span><input type="number" step="any" inputmode="decimal" placeholder="0" data-c="'+c+'"></div>'});
+h+='<div class="bar" style="margin-top:10px"><button class="btn" id="sb" onclick="saveM()">Save expenses</button><span id="sm" class="pos"></span></div><p class="note">Sirf naye amounts likho aur Save dabao. Har save is date pe add hota hai, form khali ho jata hai (next entry ke liye), aur Overview, Daily, Monthly sab auto update hote hain.</p></div>';
+h+='<div class="card"><div class="bar"><label style="margin:0">Month</label><input type="month" value="'+ek+'" onchange="ek=this.value||ek;render()" style="width:auto"></div><div class="kpis">'+K(fmt(t),"Total expenses · "+ek)+'</div><div class="w" style="margin-top:10px"><table class="sm"><tr><th class="l">Category</th><th>Total</th></tr>';
+CATS.forEach(function(c){var x=exOf(ek,c);if(x)h+='<tr><td class="l">'+c+'</td><td>'+fmt(x)+'</td></tr>'});
+if(!t)h+='<tr><td colspan="2" class="l">No expenses this month yet.</td></tr>';
+h+='</table></div></div><h3 class="sec">Entries in '+ek+' (tap to edit / delete)</h3><div class="card w"><table class="sm"><tr><th class="l">Date</th><th class="l">Category</th><th class="l">Note</th><th>Amount</th></tr>';
+var L=D.exp.filter(function(x){return(x.date||"").indexOf(ek)===0}).sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:0}),rows=0;
+L.forEach(function(x){rows++;h+='<tr class="c" onclick="openE(\''+x.id+'\')"><td class="l">'+esc(x.date)+'</td><td class="l">'+esc(x.cat)+'</td><td class="l">'+esc(x.note)+'</td><td>'+fmt(n(x.amt))+'</td></tr>'});
+CATS.forEach(function(c){if(n(lg[c])){rows++;h+='<tr class="c" onclick="editLeg(\''+c+'\')"><td class="l">Monthly total</td><td class="l">'+c+'</td><td class="l">older entry</td><td>'+fmt(n(lg[c]))+'</td></tr>'}});
+if(!rows)h+='<tr><td colspan="4" class="l">None</td></tr>';
+return h+'</table></div>'}
+function saveM(){var d=$("#edt").value||today(),add=[],i=0;
+document.querySelectorAll("input[data-c]").forEach(function(inp){var a=n(inp.value);if(a)add.push({id:"e"+Date.now()+"x"+(i++),date:d,cat:inp.dataset.c,amt:a,note:""})});
+if(!add.length){alert("Enter at least one amount.");return}
+var b=$("#sb");b.disabled=true;b.innerHTML='<span class="spin"></span> Saving…';
+document.querySelectorAll("input[data-c]").forEach(function(x){x.disabled=true});
+setTimeout(function(){add.forEach(function(o){D.exp.push(o)});EDT=d;ek=d.slice(0,7);save();
+var m=$("#sm");if(m){m.textContent="✓ Saved – "+add.length+" expense"+(add.length>1?"s":"")+" added";setTimeout(function(){var q=$("#sm");if(q)q.textContent=""},3000)}},700)}
+function editLeg(c){var v=prompt("Monthly total for "+c+" ("+ek+"). Set 0 to remove:",(D.expenses[ek]||{})[c]);if(v===null)return;D.expenses[ek]=D.expenses[ek]||{};D.expenses[ek][c]=v;save()}
 function openE(id,d){editId=id;var x=Object.assign({date:d||(ek===today().slice(0,7)?today():ek+"-01"),cat:CATS[0]},D.exp.find(function(y){return y.id===id})||{});
 var h='<h3 style="margin-top:0">'+(id?"Edit expense":"Add expense")+'</h3><div class="g2"><div><label>Date</label><input name="date" type="date" value="'+esc(x.date)+'"></div><div><label>Category</label><select name="cat">'+CATS.map(function(c){return'<option'+(c===x.cat?" selected":"")+'>'+c+'</option>'}).join("")+'</select></div><div><label>Amount ($)</label><input name="amt" type="number" step="any" value="'+esc(x.amt)+'"></div><div><label>Note (optional)</label><input name="note" type="text" value="'+esc(x.note)+'"></div></div><div class="bar" style="margin-top:12px"><button type="button" class="btn" onclick="saveE()">Save</button><button type="button" class="btn g" onclick="$(\'#dlg\').close()">Cancel</button>'+(id?'<button type="button" class="btn d" onclick="delE()">Delete</button>':"")+'</div>';
 $("#frm").oninput=null;$("#frm").innerHTML=h;$("#dlg").showModal()}
