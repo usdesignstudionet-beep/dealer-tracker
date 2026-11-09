@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RajBros Auto Group – Dealer Tracker</title>
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f5f6f8;--card:#fff;--tx:#14213d;--mu:#667085;--ac:#1f3864;--ln:#e0e3e8;--ok:#1b7f3b;--bad:#c0392b;--hd:#1f3864;--hdt:#fff}
+@media(prefers-color-scheme:dark){:root{--bg:#10141c;--card:#1a2030;--tx:#e8ecf4;--mu:#9aa5b8;--ac:#7fa6e8;--ln:#2d3548;--ok:#5cc07a;--bad:#ff7b6b;--hd:#2a3a60;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.4 Arial,Helvetica,sans-serif}
+header{padding:14px 16px;background:var(--hd);color:var(--hdt)}
+header h1{margin:0;font-size:18px}header p{margin:2px 0 0;font-size:12px;opacity:.8}
+nav{display:flex;gap:4px;padding:8px 12px;background:var(--card);border-bottom:1px solid var(--ln);position:sticky;top:env(safe-area-inset-top,0px);z-index:5;overflow-x:auto}
+nav button{flex:1 0 auto;white-space:nowrap;padding:9px 12px;border:0;border-radius:8px;background:transparent;color:var(--mu);font:inherit;font-weight:700;cursor:pointer}
+nav button.on{background:var(--ac);color:var(--card)}
+main{padding:12px;max-width:1150px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:12px;margin-bottom:12px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.btn{padding:9px 14px;border:0;border-radius:8px;background:var(--ac);color:var(--card);font:inherit;font-weight:700;cursor:pointer}
+.btn.s{padding:5px 9px;font-size:12px;background:var(--ok);color:#fff}
+.btn.g{background:transparent;color:var(--tx);border:1px solid var(--ln)}.btn.g.on{background:var(--ac);color:var(--card)}.btn.d{background:var(--bad);color:#fff}
+input,select{font:inherit;padding:8px;border:1px solid var(--ln);border-radius:8px;background:var(--bg);color:var(--tx);width:100%}
+.w{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:760px}table.sm{min-width:0}
+th{background:var(--hd);color:var(--hdt);font-size:12px;padding:8px;text-align:right;white-space:nowrap}
+td{padding:8px;border-bottom:1px solid var(--ln);text-align:right;white-space:nowrap}
+th:first-child,td:first-child,td.l,th.l{text-align:left}
+tr.c{cursor:pointer}tr.c:hover td{background:var(--bg)}tr.tot td{font-weight:700;background:var(--bg)}
+.pos{color:var(--ok);font-weight:700}.neg{color:var(--bad);font-weight:700}.old{color:var(--bad)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.kpi{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:10px}
+.kpi b{display:block;font-size:18px}.kpi span{color:var(--mu);font-size:12px}
+.sec{font-size:15px;margin:18px 0 8px}
+.bb{height:8px;background:var(--ac);border-radius:4px;opacity:.7;min-width:2px}
+.warn{background:#fff1cc;color:#5c4200;padding:9px 12px;border-radius:8px;margin-bottom:10px;font-size:13px}
+dialog{border:1px solid var(--ln);border-radius:12px;background:var(--card);color:var(--tx);width:min(560px,94vw);padding:16px}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}label{font-size:12px;color:var(--mu);display:block}
+.ex{display:grid;grid-template-columns:1fr 130px;gap:8px;align-items:center;margin-bottom:6px}
+.note{color:var(--mu);font-size:12px;margin:6px 0}
+#pl{margin:10px 0;padding:10px;border:2px solid var(--ln);border-radius:8px;font-size:15px}
+@media(max-width:600px){.ex{grid-template-columns:1fr 110px}.g2{grid-template-columns:1fr}input,select{font-size:16px}.btn{padding:11px 14px}main{padding:8px}.kpi b{font-size:16px}}
+</style></head><body>
+<header><h1>RajBros Auto Group – Dealer Tracker</h1><p>1st Choice Auto Group · Cerritos / Long Beach, CA · <span id="cs">Saved on this device only</span></p></header>
+<nav id="nav"><button data-t="w" class="on">Overview</button><button data-t="v">Vehicles</button><button data-t="o">Sold</button><button data-t="d">Daily</button><button data-t="e">Expenses</button><button data-t="s">Monthly</button></nav>
+<main id="app"></main>
+<input type="file" id="imp" accept=".json" hidden>
+<dialog id="dlg"><form id="frm" onsubmit="return false"></form></dialog>
+<script>
+var CATS=["Salary","Carfax","CarGurus","Rent","Electricity","Dealer Center CRM","Meta / Instagram Ads","Social Media Management","Other"];
+var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+var FIELDS=[["stock","Stock #","text"],["pdate","Purchase date","date"],["source","Purchase auction / source","text"],["year","Year","number"],["make","Make","text"],["model","Model","text"],["miles","Miles","number"],["price","Purchase price ($)","number"],["tax","Taxes & DMV fees paid ($)","number"],["recon","Reconditioning cost ($)","number"],["paid","Paid by (cash / floored)","sel"],["floor","Floorplan fees, if floored ($)","number"],["sdate","Sold date","date"],["sprice","Sold price ($)","number"],["cust","Customer name","text"]];
+var $=function(s){return document.querySelector(s)};
+var n=function(v){return +v||0};
+var fmt=function(x){return(x<0?"-":"")+"$"+Math.abs(Math.round(x)).toLocaleString("en-US")};
+var esc=function(s){var d=document.createElement("div");d.textContent=s==null?"":s;return d.innerHTML};
+var cl=function(x){return x<0?"neg":x>0?"pos":""};
+var cost=function(v){return n(v.price)+n(v.tax)+n(v.recon)+n(v.floor)};
+var sold=function(v){return !!(v.sdate&&v.sprice!==""&&v.sprice!=null)};
+var profit=function(v){return n(v.sprice)-cost(v)};
+var pct=function(v){return n(v.sprice)?(profit(v)/n(v.sprice)*100).toFixed(1)+"%":"–"};
+var days=function(v){if(!v.pdate)return"";var e=sold(v)?new Date(v.sdate):new Date();return Math.round((e-new Date(v.pdate))/864e5)};
+var today=function(){var d=new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)};
+var D={vehicles:[],exp:[],expenses:{}},tab="w",PR="m",DD=today(),editId=null,ek=today().slice(0,7),yr=+today().slice(0,4);
+function mig(d){d.vehicles=d.vehicles||[];d.exp=d.exp||[];d.expenses=d.expenses||{};
+d.exp=d.exp.filter(function(x){if(x.note==="Monthly total (from old version)"){var k=x.date.slice(0,7);d.expenses[k]=d.expenses[k]||{};d.expenses[k][x.cat]=d.expenses[k][x.cat]||x.amt;return false}return true});return d}
+function load(){try{var s=localStorage.getItem("rbdata");if(s)D=mig(Object.assign(D,JSON.parse(s)))}catch(e){}}
+var DL=null,SY={v:{},e:{},m:{}},busy=0,GS=window.google&&google.script&&google.script.run;
+function cerr(){busy=0;$("#cs").textContent="Online save failed – check connection"}
+function diff(){var o={vehicles:{set:[],del:[]},exp:{set:[],del:[]},expenses:{set:{},del:[]}},any=0;
+function f(arr,key,t){var seen={};arr.forEach(function(r){seen[r.id]=1;if(SY[key][r.id]!==JSON.stringify(r)){t.set.push(r);any=1}});Object.keys(SY[key]).forEach(function(id){if(!seen[id]){t.del.push(id);any=1}})}
+f(D.vehicles,"v",o.vehicles);f(D.exp,"e",o.exp);
+Object.keys(D.expenses).forEach(function(k){if(SY.m[k]!==JSON.stringify(D.expenses[k])){o.expenses.set[k]=D.expenses[k];any=1}});
+Object.keys(SY.m).forEach(function(k){if(!D.expenses[k]){o.expenses.del.push(k);any=1}});return any?o:null}
+function take(d){D.vehicles=d.vehicles||[];D.exp=d.exp||[];D.expenses=d.expenses||{};SY={v:{},e:{},m:{}};
+D.vehicles.forEach(function(r){SY.v[r.id]=JSON.stringify(r)});D.exp.forEach(function(r){SY.e[r.id]=JSON.stringify(r)});Object.keys(D.expenses).forEach(function(k){SY.m[k]=JSON.stringify(D.expenses[k])});
+try{localStorage.setItem("rbdata",JSON.stringify(D))}catch(e){}}
+function sync(){if(!GS)return;var o=diff();if(!o)return;busy++;$("#cs").textContent="Saving…";
+GS.withSuccessHandler(function(d){busy--;if(busy>0)return;take(d);$("#cs").textContent="☁ Synced online";if(!$("#dlg").open)render()}).withFailureHandler(cerr).applyOps(o)}
+function save(){try{localStorage.setItem("rbdata",JSON.stringify(D))}catch(e){}sync();render()}
+function pull(){var ae=document.activeElement;if(!GS||busy||$("#dlg").open||(ae&&ae.tagName==="INPUT"))return;
+GS.withSuccessHandler(function(d){if(busy)return;if(JSON.stringify({vehicles:d.vehicles,exp:d.exp,expenses:d.expenses})!==JSON.stringify({vehicles:D.vehicles,exp:D.exp,expenses:D.expenses})){take(d);if(!$("#dlg").open)render()}}).getData()}
+function cloud(){if(!GS)return;
+GS.withSuccessHandler(function(d){var empty=!(d.vehicles||[]).length&&!(d.exp||[]).length&&!Object.keys(d.expenses||{}).length;
+if(empty&&(D.vehicles.length||D.exp.length||Object.keys(D.expenses).length)){SY={v:{},e:{},m:{}};sync()}else take(d);
+$("#cs").textContent="☁ Synced online";render();setInterval(pull,15000)}).withFailureHandler(cerr).getData()}
+function exOf(p,c){var t=D.exp.filter(function(x){return(x.date||"").indexOf(p)===0&&(!c||x.cat===c)}).reduce(function(s,x){return s+n(x.amt)},0);
+Object.keys(D.expenses).forEach(function(k){if(k.indexOf(p)===0)(c?[c]:CATS).forEach(function(q){t+=n((D.expenses[k]||{})[q])})});return t}
+function calc(p){var s=D.vehicles.filter(function(v){return sold(v)&&v.sdate.indexOf(p)===0}),b=D.vehicles.filter(function(v){return v.pdate&&v.pdate.indexOf(p)===0}),r={s:s,b:b,rev:0,pr:0,tx:0,rc:0,fl:0,loss:0,dy:0,bc:0};
+s.forEach(function(v){r.rev+=n(v.sprice);r.pr+=n(v.price);r.tx+=n(v.tax);r.rc+=n(v.recon);r.fl+=n(v.floor);if(profit(v)<0)r.loss++;r.dy+=days(v)});
+b.forEach(function(v){r.bc+=cost(v)});
+r.vc=r.pr+r.tx+r.rc+r.fl;r.gross=r.rev-r.vc;r.ex=exOf(p);r.net=r.gross-r.ex;return r}
+function K(v,l,c){return '<div class="kpi"><b class="'+(c||"")+'">'+v+'</b><span>'+l+'</span></div>'}
+function R(l,v,c,t){return '<tr'+(t?' class="tot"':'')+'><td class="l">'+l+'</td><td class="'+(c||"")+'">'+fmt(v)+'</td></tr>'}
+function vn(v){return esc([v.year,v.make,v.model].join(" "))}
+function render(){$("#app").innerHTML={w:overview,v:vehicles,o:soldTab,d:daily,e:expenses,s:summary}[tab]();
+document.querySelectorAll("nav button").forEach(function(b){b.classList.toggle("on",b.dataset.t===tab)})}
+function bk(){return '<button class="btn g" onclick="exp(1)">Share / Export backup</button><button class="btn g" onclick="$(\'#imp\').click()">Import backup</button>'}
+
+function overview(){var p={d:today(),m:today().slice(0,7),y:today().slice(0,4),a:""}[PR],r=calc(p),lb=null;
+try{lb=localStorage.getItem("rbbk")}catch(e){}
+var h='';if(D.vehicles.length&&(!lb||(new Date()-new Date(lb))>6048e5))h+='<div class="warn">⚠ No backup in the last 7 days. Tap “Share / Export backup” and save the file somewhere safe.</div>';
+h+='<div class="bar">';[["d","Today"],["m","This month"],["y","This year"],["a","All time"]].forEach(function(x){h+='<button class="btn g'+(PR===x[0]?" on":"")+'" onclick="PR=\''+x[0]+'\';render()">'+x[1]+'</button>'});h+=bk()+'</div>';
+h+='<h3 class="sec" style="margin-top:4px">Profit &amp; Loss</h3><div class="kpis">'+K(r.s.length,"Cars sold")+K(fmt(r.rev),"Sales (money in)")+K(fmt(r.gross),"Gross profit on cars",cl(r.gross))+K(fmt(r.ex),"Office, marketing &amp; salary")+K(fmt(r.net),"NET PROFIT / LOSS",cl(r.net))+K(r.s.length?fmt(r.gross/r.s.length):"–","Avg profit per car")+K(r.loss,"Cars sold at a loss")+K(r.s.length?Math.round(r.dy/r.s.length):"–","Avg days to sell")+'</div>';
+h+='<div class="card w" style="margin-top:12px"><table class="sm"><tr><th class="l">Detailed statement</th><th>Amount</th></tr>'+R("Sales of vehicles",r.rev,"",1)+R("− Vehicle purchase price",-r.pr)+R("− Taxes &amp; DMV fees",-r.tx)+R("− Reconditioning",-r.rc)+R("− Floorplan fees",-r.fl)+R("Gross profit",r.gross,cl(r.gross),1);
+CATS.forEach(function(c){var x=exOf(p,c);if(x)h+=R("− "+c,-x)});
+h+=R("Total expenses",-r.ex,"",1)+R("NET PROFIT / LOSS",r.net,cl(r.net),1)+'</table></div>';
+h+='<h3 class="sec">Expenses breakdown</h3><div class="card w"><table class="sm"><tr><th class="l">Category</th><th>Amount</th><th>%</th><th class="l" style="width:35%"></th></tr>';
+CATS.forEach(function(c){var x=exOf(p,c),q=r.ex?x/r.ex*100:0;h+='<tr><td class="l">'+c+'</td><td>'+fmt(x)+'</td><td>'+q.toFixed(0)+'%</td><td class="l"><div class="bb" style="width:'+q+'%"></div></td></tr>'});
+h+='<tr class="tot"><td class="l">Total</td><td>'+fmt(r.ex)+'</td><td></td><td></td></tr></table></div>';
+var st=D.vehicles.filter(function(v){return !sold(v)}),fl=st.filter(function(v){return v.paid==="Floored"}),tc=st.reduce(function(s,v){return s+cost(v)},0),fc=fl.reduce(function(s,v){return s+cost(v)},0);
+h+='<h3 class="sec">Money in stock (right now)</h3><div class="kpis">'+K(st.length,"Cars in stock")+K(fmt(tc),"Money tied up in stock")+K(fmt(tc-fc)+" ("+(st.length-fl.length)+" cars)","Paid cash")+K(fmt(fc)+" ("+fl.length+" cars)","Floored")+K(st.filter(function(v){return days(v)>45}).length,"In stock over 45 days","old")+'</div>';
+h+='<h3 class="sec">Cars bought ('+{d:"today",m:"this month",y:"this year",a:"all time"}[PR]+')</h3><div class="kpis">'+K(r.b.length,"Cars bought")+K(fmt(r.bc),"Total spent on them")+'</div>';
+return h+'<p class="note">Gross profit = sold price − (purchase + taxes &amp; DMV + reconditioning + floorplan). Net profit = gross profit − all expenses. Only sold cars count toward profit.</p>'}
+
+function vehicles(){var h='<div class="bar"><button class="btn" onclick="openF(null)">+ Add vehicle</button>'+bk()+'</div>';
+var st=D.vehicles.filter(function(v){return !sold(v)});
+h+='<div class="card w"><table><tr><th class="l">Stock #</th><th class="l">Vehicle</th><th>Bought</th><th>Source</th><th>Paid by</th><th>Total cost</th><th>Days</th><th></th></tr>';
+if(!st.length)h+='<tr><td colspan="8" class="l">No cars in stock. Tap “+ Add vehicle”.</td></tr>';
+st.sort(function(a,b){return(b.pdate||"")>(a.pdate||"")?1:-1}).forEach(function(v){var d=days(v);
+h+='<tr class="c" onclick="openF(\''+v.id+'\')"><td class="l">'+esc(v.stock)+'</td><td class="l">'+vn(v)+(v.miles?" · "+n(v.miles).toLocaleString("en-US")+" mi":"")+'</td><td>'+esc(v.pdate)+'</td><td>'+esc(v.source)+'</td><td>'+esc(v.paid)+'</td><td>'+fmt(cost(v))+'</td><td class="'+(d>45?"old":"")+'">'+d+'</td><td><button class="btn s" onclick="event.stopPropagation();openF(\''+v.id+'\',1)">Mark sold</button></td></tr>'});
+return h+"</table></div>"}
+function soldTab(){var s=D.vehicles.filter(sold).sort(function(a,b){return b.sdate>a.sdate?1:-1}),rev=0,pr=0,loss=0;
+s.forEach(function(v){rev+=n(v.sprice);pr+=profit(v);if(profit(v)<0)loss++});
+var h='<div class="bar"><button class="btn" onclick="openF(null,1)">+ Add sold car</button>'+bk()+'</div><div class="kpis">'+K(s.length,"Vehicles sold")+K(fmt(rev),"Total sales")+K(fmt(pr),"Total profit / loss",cl(pr))+K(loss,"Sold at a loss")+'</div><div class="card w" style="margin-top:12px"><table><tr><th class="l">Stock #</th><th class="l">Vehicle</th><th>Sold date</th><th class="l">Customer</th><th>Total cost</th><th>Sold price</th><th>Profit / Loss</th><th>Margin</th><th>Days</th></tr>';
+if(!s.length)h+='<tr><td colspan="9" class="l">No sold vehicles yet. Use “Mark sold” on the Vehicles tab.</td></tr>';
+s.forEach(function(v){var p=profit(v);h+='<tr class="c" onclick="openF(\''+v.id+'\')"><td class="l">'+esc(v.stock)+'</td><td class="l">'+vn(v)+'</td><td>'+esc(v.sdate)+'</td><td class="l">'+esc(v.cust)+'</td><td>'+fmt(cost(v))+'</td><td>'+fmt(n(v.sprice))+'</td><td class="'+cl(p)+'">'+(p<0?"LOSS ":"PROFIT ")+fmt(Math.abs(p))+'</td><td>'+pct(v)+'</td><td>'+days(v)+'</td></tr>'});
+return h+"</table></div>"}
+
+function openF(id,ms,dd){editId=id;var v=Object.assign({paid:"Cash",pdate:(ms?today():(dd||today()))},D.vehicles.find(function(x){return x.id===id})||{});
+if(ms&&!v.sdate)v.sdate=dd||today();
+var h='<h3 style="margin-top:0">'+(id?"Edit vehicle":ms?"Add sold vehicle":"Add vehicle")+'</h3><div class="g2">';
+FIELDS.forEach(function(f){h+='<div><label>'+f[1]+'</label>'+(f[2]==="sel"?'<select name="'+f[0]+'"><option>Cash</option><option'+(v.paid==="Floored"?" selected":"")+'>Floored</option></select>':'<input name="'+f[0]+'" type="'+f[2]+'" step="any" value="'+esc(v[f[0]])+'">')+'</div>'});
+h+='</div><div id="pl"></div><div class="bar"><button type="button" class="btn" onclick="saveF()">Save</button><button type="button" class="btn g" onclick="$(\'#dlg\').close()">Cancel</button>'+(id?'<button type="button" class="btn d" onclick="delV()">Delete</button>':"")+'</div>';
+$("#frm").innerHTML=h;$("#frm").oninput=pv;pv();$("#dlg").showModal();if(ms)$("#frm").elements.sprice.focus()}
+function pv(){var e=$("#frm").elements,o={};FIELDS.forEach(function(f){o[f[0]]=e[f[0]].value});
+var c=cost(o),h='Total cost: <b>'+fmt(c)+'</b>';
+if(o.sprice!==""){var p=n(o.sprice)-c;h+=' &nbsp;·&nbsp; Sold: <b>'+fmt(n(o.sprice))+'</b> &nbsp;·&nbsp; <span class="'+cl(p)+'">'+(p<0?"LOSS ":"PROFIT ")+fmt(Math.abs(p))+' ('+(n(o.sprice)?(p/n(o.sprice)*100).toFixed(1):0)+'%)</span>'}
+else h+=' &nbsp;·&nbsp; <span style="color:var(--mu)">Enter a sold price to see profit / loss</span>';
+$("#pl").innerHTML=h}
+function saveF(){var o={};FIELDS.forEach(function(f){o[f[0]]=$("#frm").elements[f[0]].value});
+if(!o.make&&!o.model){alert("Enter at least the make or model.");return}
+if(editId){var i=D.vehicles.findIndex(function(x){return x.id===editId});o.id=editId;D.vehicles[i]=o}else{o.id="v"+Date.now();D.vehicles.push(o)}
+$("#dlg").close();save()}
+function delV(){if(confirm("Delete this vehicle?")){D.vehicles=D.vehicles.filter(function(x){return x.id!==editId});$("#dlg").close();save()}}
+
+function daily(){var r=calc(DD),h='<div class="bar"><button class="btn g" onclick="shiftD(-1)">◀</button><input type="date" value="'+DD+'" onchange="DD=this.value||today();render()" style="width:auto"><button class="btn g" onclick="shiftD(1)">▶</button><button class="btn g" onclick="DD=today();render()">Today</button></div>';
+h+='<div class="kpis">'+K(r.b.length,"Cars bought")+K(fmt(r.bc),"Spent on purchases")+K(r.s.length,"Cars sold")+K(fmt(r.rev),"Sales")+K(fmt(r.gross),"Profit on cars sold",cl(r.gross))+K(fmt(r.ex),"Expenses")+K(fmt(r.net),"Day net",cl(r.net))+'</div>';
+h+='<div class="bar" style="margin-top:18px"><h3 class="sec" style="margin:0;flex:1">Bought</h3><button class="btn s" onclick="openF(null,0,DD)">+ Add bought car</button></div><div class="card w"><table class="sm"><tr><th class="l">Stock #</th><th class="l">Vehicle</th><th class="l">Source</th><th>Paid by</th><th>Cost</th></tr>';
+if(!r.b.length)h+='<tr><td colspan="5" class="l">None</td></tr>';
+r.b.forEach(function(v){h+='<tr class="c" onclick="openF(\''+v.id+'\')"><td class="l">'+esc(v.stock)+'</td><td class="l">'+vn(v)+'</td><td class="l">'+esc(v.source)+'</td><td>'+esc(v.paid)+'</td><td>'+fmt(cost(v))+'</td></tr>'});
+h+='</table></div><div class="bar" style="margin-top:18px"><h3 class="sec" style="margin:0;flex:1">Sold</h3><button class="btn s" onclick="openF(null,1,DD)">+ Add sold car</button></div><div class="card w"><table class="sm"><tr><th class="l">Vehicle</th><th class="l">Customer</th><th>Cost</th><th>Sold price</th><th>Profit / Loss</th></tr>';
+if(!r.s.length)h+='<tr><td colspan="5" class="l">None</td></tr>';
+r.s.forEach(function(v){h+='<tr class="c" onclick="openF(\''+v.id+'\')"><td class="l">'+vn(v)+'</td><td class="l">'+esc(v.cust)+'</td><td>'+fmt(cost(v))+'</td><td>'+fmt(n(v.sprice))+'</td><td class="'+cl(profit(v))+'">'+fmt(profit(v))+'</td></tr>'});
+h+='</table></div><h3 class="sec">Expenses</h3><div class="card w"><table class="sm"><tr><th class="l">Category</th><th class="l">Note</th><th>Amount</th></tr>';
+var ex=D.exp.filter(function(x){return x.date===DD});if(!ex.length)h+='<tr><td colspan="3" class="l">None</td></tr>';
+ex.forEach(function(x){h+='<tr class="c" onclick="openE(\''+x.id+'\')"><td class="l">'+esc(x.cat)+'</td><td class="l">'+esc(x.note)+'</td><td>'+fmt(n(x.amt))+'</td></tr>'});
+return h+'</table></div><button class="btn" onclick="openE(null,DD)">+ Add expense for this day</button>'}
+function shiftD(k){var d=new Date(DD+"T12:00:00");d.setDate(d.getDate()+k);DD=d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);render()}
+
+function expenses(){var e=D.expenses[ek]||{},t=0;CATS.forEach(function(c){t+=n(e[c])});var x=exOf(ek)-t;
+var h='<div class="card"><div class="bar"><label style="margin:0">Month</label><input type="month" value="'+ek+'" onchange="ek=this.value||ek;render()" style="width:auto"></div>';
+CATS.forEach(function(c){h+='<div class="ex"><span>'+c+'</span><input type="number" step="any" placeholder="0" data-c="'+c+'" value="'+(e[c]||"")+'" onchange="setE(\''+c+'\',this.value)"></div>'});
+h+='<p><b>Total for '+ek+': '+fmt(t)+'</b></p><div class="bar"><button class="btn" onclick="saveM()">Save</button><span id="sm" class="pos"></span></div><p class="note">Tap Save after entering the details. You can come back and add or change amounts anytime, then Save again.</p>';
+if(x)h+='<p class="note">+ '+fmt(x)+' of expenses added on the Daily tab (included in Overview and Monthly).</p>';
+return h+'</div>'}
+function saveM(){D.expenses[ek]=D.expenses[ek]||{};document.querySelectorAll("input[data-c]").forEach(function(i){D.expenses[ek][i.dataset.c]=i.value});save();var m=$("#sm");if(m){m.textContent="✓ Saved";setTimeout(function(){var q=$("#sm");if(q)q.textContent=""},2500)}}
+function setE(c,v){D.expenses[ek]=D.expenses[ek]||{};D.expenses[ek][c]=v;save()}
+function openE(id,d){editId=id;var x=Object.assign({date:d||(ek===today().slice(0,7)?today():ek+"-01"),cat:CATS[0]},D.exp.find(function(y){return y.id===id})||{});
+var h='<h3 style="margin-top:0">'+(id?"Edit expense":"Add expense")+'</h3><div class="g2"><div><label>Date</label><input name="date" type="date" value="'+esc(x.date)+'"></div><div><label>Category</label><select name="cat">'+CATS.map(function(c){return'<option'+(c===x.cat?" selected":"")+'>'+c+'</option>'}).join("")+'</select></div><div><label>Amount ($)</label><input name="amt" type="number" step="any" value="'+esc(x.amt)+'"></div><div><label>Note (optional)</label><input name="note" type="text" value="'+esc(x.note)+'"></div></div><div class="bar" style="margin-top:12px"><button type="button" class="btn" onclick="saveE()">Save</button><button type="button" class="btn g" onclick="$(\'#dlg\').close()">Cancel</button>'+(id?'<button type="button" class="btn d" onclick="delE()">Delete</button>':"")+'</div>';
+$("#frm").oninput=null;$("#frm").innerHTML=h;$("#dlg").showModal()}
+function saveE(){var e=$("#frm").elements,o={date:e.date.value,cat:e.cat.value,amt:n(e.amt.value),note:e.note.value};
+if(!o.date||!o.amt){alert("Enter a date and an amount.");return}
+if(editId){var i=D.exp.findIndex(function(y){return y.id===editId});o.id=editId;D.exp[i]=o}else{o.id="e"+Date.now();D.exp.push(o)}
+$("#dlg").close();save()}
+function delE(){if(confirm("Delete this expense?")){D.exp=D.exp.filter(function(x){return x.id!==editId});$("#dlg").close();save()}}
+
+function summary(){var h='<div class="bar"><label style="margin:0">Year</label><input type="number" value="'+yr+'" onchange="yr=+this.value;render()" style="width:100px">'+bk()+'</div><div class="card w"><table><tr><th class="l">Month</th><th>Cars sold</th><th>Revenue</th><th>Vehicle cost</th><th>Gross profit</th><th>Expenses</th><th>Net profit</th><th>Cars bought</th></tr>';
+var T=[0,0,0,0,0,0,0];
+for(var m=0;m<12;m++){var k=yr+"-"+("0"+(m+1)).slice(-2),c=calc(k),r=[c.s.length,c.rev,c.vc,c.gross,c.ex,c.net,c.b.length];r.forEach(function(x,i){T[i]+=x});
+h+='<tr><td class="l">'+MON[m]+'</td><td>'+r[0]+'</td><td>'+fmt(r[1])+'</td><td>'+fmt(r[2])+'</td><td>'+fmt(r[3])+'</td><td>'+fmt(r[4])+'</td><td class="'+cl(r[5])+'">'+fmt(r[5])+'</td><td>'+r[6]+'</td></tr>'}
+h+='<tr class="tot"><td class="l">Year total</td><td>'+T[0]+'</td><td>'+fmt(T[1])+'</td><td>'+fmt(T[2])+'</td><td>'+fmt(T[3])+'</td><td>'+fmt(T[4])+'</td><td class="'+cl(T[5])+'">'+fmt(T[5])+'</td><td>'+T[6]+'</td></tr></table></div>';
+return h+'<p class="note">Expenses include salary, rent, electricity, Carfax, CarGurus, CRM, marketing and other. Net profit = gross profit − expenses.</p>'}
+
+function exp(share){try{localStorage.setItem("rbbk",today())}catch(e){}
+var blob=new Blob([JSON.stringify(D,null,1)],{type:"application/json"}),name="RajBros_backup_"+today()+".json";
+if(share&&navigator.canShare){var f=new File([blob],name,{type:"application/json"});if(navigator.canShare({files:[f]})){navigator.share({files:[f]}).catch(function(){});return}}
+var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click()}
+$("#imp").onchange=function(){var f=this.files[0];this.value="";if(!f)return;var r=new FileReader();r.onload=function(){try{var d=JSON.parse(r.result);if(!Array.isArray(d.vehicles))throw 0;d=mig(d);
+if(confirm("MERGE this backup into current data?\n\nOK = merge (keeps both devices' data; same record = backup version wins)\nCancel = more options")){
+d.vehicles.forEach(function(v){var i=D.vehicles.findIndex(function(x){return x.id===v.id});if(i<0)D.vehicles.push(v);else D.vehicles[i]=v});
+d.exp.forEach(function(v){var i=D.exp.findIndex(function(x){return x.id===v.id});if(i<0)D.exp.push(v);else D.exp[i]=v});Object.keys(d.expenses).forEach(function(k){D.expenses[k]=Object.assign(D.expenses[k]||{},d.expenses[k])});save()}
+else if(confirm("Replace ALL current data with this backup?")){D={vehicles:d.vehicles,exp:d.exp,expenses:d.expenses};save()}}catch(e){alert("That is not a valid backup file.")}};r.readAsText(f)};
+document.querySelectorAll("nav button").forEach(function(b){b.onclick=function(){tab=b.dataset.t;render();window.scrollTo(0,0)}});
+load();render();cloud();
+</script></body></html>
